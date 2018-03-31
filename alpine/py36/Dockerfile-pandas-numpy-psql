@@ -1,0 +1,41 @@
+# VERSION 1.0.0-1
+# AUTHOR: Diego Rabatone Oliveira (@diraol)
+# DESCRIPTION: python:3.6-alpine dockerfile with numpy, pandas,
+#               psycopg2-binary python libraries
+# BUILD: docker build -f Dockerfile-numpy-panas-psql -t diraol/alpine-py36-pandas-numpy-psql:<VERSION> .
+#    To push the base image to dockerhub run:
+#       docker push diraol/alpine-py36-pandas-numpy-psql:<VERSION>
+# SOURCE: https://github.com/diraol/dockerfiles
+FROM python:3.6-alpine
+
+# Never prompts the user for choices on installation/configuration of packages
+ENV DEBIAN_FRONTEND noninteractive
+ENV TERM linux
+
+# https://docs.python.org/3.6/using/cmdline.html#envvar-PYTHONUNBUFFERED
+# https://github.com/sclorg/s2i-python-container/issues/157
+# Aparentemente esta opção envolve expor mensagens de prompt/console/logs do
+# python para o container.
+ENV PYTHONUNBUFFERED 1
+
+# Instalando numpy
+RUN set -ex \
+    && apk --no-cache add \
+        postgresql-dev \
+        libstdc++ \
+    && apk --no-cache add --virtual _buildDeps \
+        curl \
+        build-base \
+        python3-dev \
+        gcc \
+        libc-dev \
+        linux-headers \
+        # musl-dev is used for python psycopg2 compilation
+        musl-dev \
+    && pip install -U pip setuptools wheel \
+    && pip install -U numpy pandas psycopg2-binary \
+    && apk del \
+        _buildDeps \
+    && rm -rf \
+        ~/.cache/pip/* \
+        /var/cache/apk/*
